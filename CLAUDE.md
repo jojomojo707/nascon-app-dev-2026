@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 NaSCon '26 App Dev, Part I: multi-sport league & club platform (backend + mobile), graded by Python scripts against a binding API contract.
 
 ## Current state
-Scaffolding only. There is **no backend or mobile source code yet**: no `backend/` folder exists, `mobile/` holds only design docs plus `release/.gitkeep`, and `tests/` is empty. `docker-compose.yml` runs the infrastructure only. Update this section as code lands.
+Backend Part I is complete on `main`: every `/audit/v1/*` route, `/health`, and the `/api/v1/*` wrappers for the app (`backend/`, Express 5 + pg, plain JS). Unit tests live in `tests/*.test.js` and live checks in `tests/e2e/` (`scripts/e2e.sh`). `PROGRESS.md` holds status, logged decisions and the handoff. The mobile app is built on a parallel branch and merged at checkpoints (see `mobile/PROGRESS.md`). MinIO is behind the compose profile `objectstore` (ADR-7).
 
 Team stack:
 - **Backend:** Node 20. Its Dockerfile must use `FROM node:20-alpine`, the runtime image in the organizers' pre-pulled bundle. The backend has no architecture doc yet.
@@ -37,7 +37,7 @@ DAY1_SALT=<salt> docker compose up -d --build   # Git Bash / Linux
 curl http://localhost:8080/health               # expect 200 {"status":"ok"}
 docker compose down -v                           # stop and delete volumes (simulates the grader's clean machine)
 ```
-PowerShell form: `$env:DAY1_SALT="<salt>"; docker compose up -d --build`. Today only `db`, `cache`, `queue` and `storage` start, and none publish host ports. The `api` and `worker` services are commented out in `docker-compose.yml` until `backend/` exists.
+PowerShell form: `$env:DAY1_SALT="<salt>"; docker compose up -d --build`. Starts `api` (host port 8080), `worker`, `db`, `cache`, `queue`. `storage` (MinIO) only starts with `--profile objectstore`. Live checks: `scripts/e2e.sh`; coverage figures: `node scripts/coverage-areas.mjs --write`.
 
 Tests (bash scripts: on Windows, run them from Git Bash):
 ```bash
@@ -110,7 +110,7 @@ The app is built from screens, one `use<Screen>Screen()` hook per screen, and of
 
 ## Graded files at the repo root (keep them current)
 - `TRACEABILITY.md`: maps each FR/NFR ID to source files and tests. Fill in the rows as code is written. Defended in the Top-8 viva.
-- `ADR.md`: **does not exist yet.** It needs eight short Architecture Decision Records, defended in the Top-8 viva (`Docs/rules-booklet.md` §4.5). Add an ADR whenever a significant architecture choice is made.
+- `ADR.md`: eight short Architecture Decision Records, defended in the Top-8 viva (`Docs/rules-booklet.md` §4.5). Update it whenever a significant architecture choice changes.
 - `COVERAGE.json`: see "Backend tests and coverage".
 - `mobile/release/app-release.apk`: committed through a `.gitignore` exception. Rebuild and commit it after app changes.
 - `.env.example`: lists every env var the stack reads, with `DAY1_SALT` left blank.

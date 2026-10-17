@@ -1,20 +1,19 @@
 # Traceability
 
 Maps every requirement ID to its source files and automated tests. Requirement text: [`Docs/spec/02-functional-and-nonfunctional-requirements.md`](Docs/spec/02-functional-and-nonfunctional-requirements.md).
-
-Fill in the last two columns as code and tests are written. `TODO` means not started.
+Unit tests run with `./run_tests.sh`; live-stack checks run with `scripts/e2e.sh` (needs `docker compose up`). Mobile rows are filled from `mobile/PROGRESS.md` once the app branch is merged.
 
 | ID | Requirement | Source files | Automated tests |
 | --- | --- | --- | --- |
-| FR-1.1 | Multi-sport taxonomy and event-sourced scoring | TODO | TODO |
-| FR-1.2 | League and tournament setup | TODO | TODO |
-| FR-1.3 | Match and fixture scheduling | TODO | TODO |
-| FR-1.4 | Automated standings and tables | TODO | TODO |
-| FR-2.1 | Club profiles and tenant isolation | TODO | TODO |
-| FR-2.2 | Roster and player registry | TODO | TODO |
-| FR-2.3 | Integrated club merchandise store | TODO | TODO |
-| FR-5.1 | Five-tier role-based access control | TODO | TODO |
-| NFR-3 | Concurrency correctness (20 buyers, last unit) | TODO | TODO |
-| NFR-4 | Offline tolerance (mobile cache, queue, sync) | TODO | TODO |
-| NFR-5 | Security (OWASP, token storage, rate limit, validation, RBAC) | TODO | TODO |
-| NFR-7 | Reproducibility (one-command startup and seed) | TODO | TODO |
+| FR-1.1 | Multi-sport taxonomy and event-sourced scoring | `backend/src/domain/sports/config.js`, `sports/service.js`, `domain/seed/baseline.js` (4 sports as data), `domain/scoring/engine.js` (projection, model limits, compensation), `scoring/service.js` (append-only log, row lock, idempotency), `lib/canonical.js`, `lib/signature.js` | `tests/sports.test.js`, `tests/scoring.test.js`, `tests/signature.test.js` (Appendix A vector 1), `scripts/e2e.sh` |
+| FR-1.2 | League and tournament setup | `backend/src/domain/scoring/league.js`, `scoring/service.js#createLeague` (league + fixture match streams), `domain/demo/seed.js` | `tests/scoring.test.js` (league validation), `scripts/e2e.sh` |
+| FR-1.3 | Match and fixture scheduling | `backend/src/domain/fixtures/roundRobin.js` (circle method, withdrawals), `swiss.js` (Buchholz, branch-and-bound pairing), `bracket.js` + `elimination.js` (single/double elim, byes, bracket reset), `fixtures/index.js`; match state machine in `scoring/engine.js` | `tests/fixtures.test.js` (n = 2..40 properties, Swiss exact R1 + optimality + NO_VALID_PAIRING, seed order, LB count B−2, GF2 conditional) |
+| FR-1.4 | Automated standings and tables | `backend/src/domain/standings/engine.js` (recursive resolve, H2H mini-league, NRR, draw lots, clinched/eliminated), `standings/service.js` | `tests/standings.test.js` (3-way tie, Appendix A vector 2, NRR, status, compensation re-rank), `tests/signature.test.js` |
+| FR-2.1 | Club profiles and tenant isolation | `backend/src/db/schema.sql` (tenants, clubs), `routes/api/index.js` (`/clubs`, tenant-filtered), `domain/rbac/policy.js` (`club.read` same-tenant) | `tests/rbac.test.js` (P6 rows), `scripts/e2e.sh` |
+| FR-2.2 | Roster and player registry | `backend/src/domain/roster/rules.js` (8 ordered checks, loans, deferred state), `roster/service.js` (append-only registrations + audit, loan_return once) | `tests/roster.test.js`, `scripts/e2e.sh` |
+| FR-2.3 | Integrated club merchandise store | `backend/src/domain/store/pricing.js`, `gateway.js` (mock authorize/capture/void/refund), `receipt.js` (PDF), `store/service.js`, `lib/queue.js` + `worker.js` (order domain events) | `tests/store.test.js` (PDF text has order id + `PKR 4500.00`), `scripts/e2e.sh` |
+| FR-5.1 | Five-tier role-based access control | `backend/src/domain/rbac/policy.js` (policy-as-code matrix), `rbac/jwt.js`, `rbac/service.js`, `routes/audit/rbac.js` (7 probes), `routes/api/index.js` | `tests/rbac.test.js` (every matrix cell, negative tests per role boundary), `scripts/e2e.sh` |
+| NFR-3 | Concurrency correctness (20 buyers, last unit) | `backend/src/domain/store/service.js` (conditional decrement `stock >= q` in one transaction, release on payment failure), `db/schema.sql` (`CHECK stock >= 0`) | `scripts/e2e.sh` (20 parallel checkouts → 1×201, 19×409, stock 0, reserved 0) |
+| NFR-4 | Offline tolerance (mobile cache, queue, sync) | `backend/src/domain/sync/envelope.js`, `sync/service.js` (shared by `/audit/v1` and `/api/v1` offline-sync); mobile: see `mobile/PROGRESS.md` | `tests/sync.test.js`, `scripts/e2e.sh` |
+| NFR-5 | Security (OWASP, token storage, rate limit, validation, RBAC) | `backend/src/middleware/rateLimit.js`, `rbac/jwt.js` (alg:none/tamper/expiry → 401), `app.js` (1 MB → 413, malformed JSON → 400), parameterised SQL everywhere, `lib/validate.js` | `tests/rbac.test.js`, `tests/sports.test.js` (SQL-injection id → 400), `tests/store.test.js` (script/quote strings), `scripts/e2e.sh` |
+| NFR-7 | Reproducibility (one-command startup and seed) | `docker-compose.yml`, `backend/Dockerfile`, `backend/src/server.js` (schema + seed at boot), `domain/seed/reset.js`, `routes/health.js` | `scripts/e2e.sh` (reset twice → identical state), clean `docker compose down -v && up -d --build` run at checkpoints |

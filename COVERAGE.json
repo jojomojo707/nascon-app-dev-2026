@@ -1,1 +1,8 @@
-{ "fixtures": 0.0, "scoring": 0.0, "standings": 0.0, "store": 0.0, "roster": 0.0, "rbac": 0.0 }
+{
+  "fixtures": 99.4,
+  "scoring": 99.4,
+  "standings": 99.2,
+  "store": 100,
+  "roster": 98.7,
+  "rbac": 65
+}
