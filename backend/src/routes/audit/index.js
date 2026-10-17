@@ -9,6 +9,7 @@ const { getStandings } = require('../../domain/standings/service');
 const roster = require('../../domain/roster/service');
 const store = require('../../domain/store/service');
 const rbac = require('../../domain/rbac/service');
+const { offlineSync } = require('../../domain/sync/service');
 
 const router = express.Router();
 
@@ -67,5 +68,8 @@ router.post('/rbac-matrix', async (req, res) => {
   res.status(200).json(await rbac.rbacMatrix());
 });
 
+router.post('/offline-sync', async (req, res) => {
+  res.status(200).json(await offlineSync(req.body));
+});
 
 module.exports = router;
