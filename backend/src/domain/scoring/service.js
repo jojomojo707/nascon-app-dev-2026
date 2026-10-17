@@ -8,6 +8,7 @@ const { validateEventBody, scoreView, checkAppend } = require('./engine');
 const { validateLeagueBody } = require('./league');
 const { lastSeed } = require('../seed/reset');
 const queue = require('../../lib/queue');
+const realtime = require('../../lib/realtime');
 
 const eventKey = (b) => ({ event_id: b.event_id, match_id: b.match_id, type: b.type, payload: b.payload });
 
@@ -111,6 +112,7 @@ async function insertEvent(c, match, events, body, hash) {
     'INSERT INTO events (match_id, sequence, event_id, type, payload, body_hash, signature, response) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
     [match.match_id, sequence, body.event_id, body.type, JSON.stringify(body.payload), hash, signature, response]);
   queue.publish('match.event_appended', { match_id: match.match_id, type: body.type, version: sequence });
+  setImmediate(() => realtime.matchEvent(match.match_id, body.type, sequence));
   return { status: 201, body: response };
 }
 

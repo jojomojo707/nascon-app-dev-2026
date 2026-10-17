@@ -6,6 +6,7 @@ const { createApp } = require('./app');
 const { pool } = require('./db/pool');
 const { reset, isSeeded } = require('./domain/seed/reset');
 const queue = require('./lib/queue');
+const realtime = require('./lib/realtime');
 
 const PORT = Number(process.env.PORT || 8080);
 
@@ -24,6 +25,7 @@ async function main() {
   const app = createApp();
   const server = app.listen(PORT, () => console.log(`API listening on :${PORT}`));
   server.requestTimeout = 15000;
+  realtime.attach(server);
 
   await waitForDb();
   await pool.query('SELECT pg_advisory_lock(42000)');

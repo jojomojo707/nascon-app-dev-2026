@@ -24,7 +24,7 @@ Plan: `/home/asad/.claude/plans/implement-the-full-nascon-woolly-sunbeam.md`.
 
 ## To do
 - 14:45 hard checkpoint: clean compose up, tests, merge mobile + APK, update docs, push. Final push before 15:05:00.
-- Optional if time allows: realtime WebSocket `/api/v1/ws` (the app falls back to 10 s polling).
+- Realtime WebSocket `/api/v1/ws?token=<jwt>` is live (protocol in mobile/architecture/07; `src/lib/realtime.js`).
 
 ## Decisions (minor, logged)
 - MinIO is behind profile `objectstore`, because Docker Hub denies `minio/minio` pulls. Receipts live in Postgres. (User-approved.)
