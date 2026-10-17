@@ -7,6 +7,7 @@ const { generateFixtures } = require('../../domain/fixtures');
 const scoring = require('../../domain/scoring/service');
 const { getStandings } = require('../../domain/standings/service');
 const roster = require('../../domain/roster/service');
+const store = require('../../domain/store/service');
 
 const router = express.Router();
 
@@ -50,6 +51,15 @@ router.post('/roster/transfer', async (req, res) => {
 
 router.get('/roster/history/:player_id', async (req, res) => {
   res.status(200).json(await roster.history(req.params.player_id, req.query.as_of));
+});
+
+router.post('/checkout', async (req, res) => {
+  const r = await store.checkout(req.body);
+  res.status(r.status).json(r.body);
+});
+
+router.get('/inventory/:variant_id', async (req, res) => {
+  res.status(200).json(await store.inventory(req.params.variant_id));
 });
 
 module.exports = router;
