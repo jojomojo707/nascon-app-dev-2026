@@ -141,6 +141,34 @@ test('swiss: minimum total score difference (greedy would get stuck) and NO_VALI
   assert.equal(err(() => generateFixtures({ format: 'swiss', teams: t, params: { round: 2, history: [] } })).status, 400);
 });
 
+test('swiss branch-and-bound matches brute force on random histories', () => {
+  let seed = 7;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const brute = (list, score, played) => {
+    if (!list.length) return 0;
+    let best = Infinity;
+    for (let j = 1; j < list.length; j++) {
+      if (played.has([list[0], list[j]].sort().join('\u0000'))) continue;
+      const rest = list.filter((_, k) => k !== 0 && k !== j);
+      best = Math.min(best, Math.abs(score.get(list[0]) - score.get(list[j])) + brute(rest, score, played));
+    }
+    return best;
+  };
+  for (let iter = 0; iter < 200; iter++) {
+    const n = 4 + 2 * Math.floor(rnd() * 3);
+    const list = teams(n);
+    const score = new Map(list.map((t) => [t, Math.floor(rnd() * 7)]));
+    list.sort((a, b) => score.get(b) - score.get(a));
+    const played = new Set();
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (rnd() < 0.45) played.add([list[i], list[j]].sort().join('\u0000'));
+    const want = brute(list, score, played);
+    const got = minCostPairing(list, score, played);
+    if (want === Infinity) { assert.equal(got, null); continue; }
+    assert.equal(got.reduce((s, [a, b]) => s + Math.abs(score.get(a) - score.get(b)), 0), want);
+    for (const [a, b] of got) assert.ok(!played.has([a, b].sort().join('\u0000')));
+  }
+});
+
 test('single elim: seed order, byes propagated, results, third place', () => {
   assert.deepEqual(seedOrder(8), [1, 8, 4, 5, 2, 7, 3, 6]);
   const r = generateFixtures({ format: 'single_elim', teams: teams(6), params: { results: [{ match_id: 'R1M2', winner: 't4' }] } });

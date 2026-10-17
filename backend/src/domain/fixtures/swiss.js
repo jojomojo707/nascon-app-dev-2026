@@ -56,19 +56,38 @@ function computeStandings(teams, history) {
 
 const pairKey = (a, b) => (a < b ? `${a}\u0000${b}` : `${b}\u0000${a}`);
 
-// Lower bound: optimal unconstrained matching of values sorted on a line pairs neighbours.
-function lowerBound(list, score) {
-  let s = 0;
-  for (let i = 0; i + 1 < list.length; i += 2) s += Math.abs(score.get(list[i]) - score.get(list[i + 1]));
-  return s;
-}
-
 // Exact minimum total |score difference| rematch-free perfect matching (branch and bound).
 // `list` is sorted by score descending; returns array of [a, b] pairs or null when impossible.
+// Works on indices: s[i] = score, ok[i*n+j] = 1 when i and j have not met.
+// Lower bound = max of two admissible bounds: (1) the unconstrained optimum on a line pairs sorted
+// neighbours; (2) every team pays at least half of its cheapest allowed partner. A team with no
+// allowed partner left makes the subset infeasible. A transposition table skips subsets already
+// reached at an equal or lower cost.
 function minCostPairing(list, score, played, deadline = Date.now() + SEARCH_BUDGET_MS) {
+  const n = list.length;
+  const s = list.map((t) => score.get(t));
+  const ok = new Uint8Array(n * n);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) ok[i * n + j] = i !== j && !played.has(pairKey(list[i], list[j])) ? 1 : 0;
+
+  function lowerBound(rest) {
+    let line = 0;
+    for (let i = 0; i + 1 < rest.length; i += 2) line += Math.abs(s[rest[i]] - s[rest[i + 1]]);
+    let cheapest = 0;
+    for (const a of rest) {
+      let m = Infinity;
+      for (const b of rest) if (ok[a * n + b]) { const d = Math.abs(s[a] - s[b]); if (d < m) m = d; }
+      if (m === Infinity) return Infinity;
+      cheapest += m;
+    }
+    return Math.max(line, Math.ceil(cheapest / 2));
+  }
+
   let best = Infinity;
   let bestPairs = null;
+  let nodes = 0;
+  let outOfTime = false;
   const dead = new Set();
+  const reached = new Map();
   const pairs = [];
   function search(rest, cost) {
     if (rest.length === 0) {
@@ -77,17 +96,24 @@ function minCostPairing(list, score, played, deadline = Date.now() + SEARCH_BUDG
       bestPairs = pairs.slice();
       return { found: true, pruned: false };
     }
-    const key = rest.join('\u0001');
+    if ((++nodes & 1023) === 0 && Date.now() > deadline) outOfTime = true;
+    if (outOfTime) return { found: false, pruned: true };
+    const key = rest.join(',');
     if (dead.has(key)) return { found: false, pruned: false };
-    if (cost + lowerBound(rest, score) >= best || Date.now() > deadline) return { found: false, pruned: true };
+    const lb = lowerBound(rest);
+    if (lb === Infinity) { dead.add(key); return { found: false, pruned: false }; }
+    const seen = reached.get(key);
+    if (seen !== undefined && seen <= cost) return { found: false, pruned: true };
+    reached.set(key, cost);
+    if (cost + lb >= best) return { found: false, pruned: true };
     let found = false;
     let pruned = false;
     const a = rest[0];
     for (let j = 1; j < rest.length; j++) {
       const b = rest[j];
-      if (played.has(pairKey(a, b))) continue;
+      if (!ok[a * n + b]) continue;
       pairs.push([a, b]);
-      const r = search(rest.filter((_, k) => k !== 0 && k !== j), cost + Math.abs(score.get(a) - score.get(b)));
+      const r = search(rest.filter((_, k) => k !== 0 && k !== j), cost + Math.abs(s[a] - s[b]));
       pairs.pop();
       found = found || r.found;
       pruned = pruned || r.pruned;
@@ -95,8 +121,8 @@ function minCostPairing(list, score, played, deadline = Date.now() + SEARCH_BUDG
     if (!found && !pruned) dead.add(key);
     return { found, pruned };
   }
-  search(list, 0);
-  return bestPairs;
+  search(list.map((_, i) => i), 0);
+  return bestPairs && bestPairs.map(([a, b]) => [list[a], list[b]]);
 }
 
 function swiss(teams, params) {
@@ -118,9 +144,11 @@ function swiss(teams, params) {
       const pool = noBye.length ? noBye : teams.slice();
       candidates = pool.sort((a, b) => st.score.get(a) - st.score.get(b) || st.idx.get(b) - st.idx.get(a));
     }
+    // One time budget shared by every bye candidate keeps the request under the 5 s limit.
+    const deadline = Date.now() + SEARCH_BUDGET_MS;
     for (const cand of candidates) {
       const list = st.order.filter((t) => t !== cand);
-      const found = minCostPairing(list, st.score, st.played);
+      const found = minCostPairing(list, st.score, st.played, deadline);
       if (found) { pairs = found; bye = cand; break; }
     }
     if (!pairs) throw conflict('NO_VALID_PAIRING', `No rematch-free pairing exists for round ${round}.`, { round });
