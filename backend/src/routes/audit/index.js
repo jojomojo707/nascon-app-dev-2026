@@ -5,6 +5,7 @@ const { reset } = require('../../domain/seed/reset');
 const sports = require('../../domain/sports/service');
 const { generateFixtures } = require('../../domain/fixtures');
 const scoring = require('../../domain/scoring/service');
+const { getStandings } = require('../../domain/standings/service');
 
 const router = express.Router();
 
@@ -31,6 +32,10 @@ router.post('/events', async (req, res) => {
 
 router.get('/score/:match_id', async (req, res) => {
   res.status(200).json(await scoring.getScore(req.params.match_id));
+});
+
+router.get('/standings/:league_id', async (req, res) => {
+  res.status(200).json(await getStandings(req.params.league_id));
 });
 
 module.exports = router;
