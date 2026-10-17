@@ -6,7 +6,7 @@ const rbac = require('../../domain/rbac/service');
 const { AppError } = require('../../lib/errors');
 
 const router = express.Router();
-const MAX_BODY = 1048576;
+const MAX_BODY = 1000000;
 
 const probe = (action, kind, param) => async (req, res) => {
   const principal = rbac.principalFrom(req);

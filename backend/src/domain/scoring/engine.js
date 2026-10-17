@@ -11,6 +11,8 @@ const IN_PROGRESS_ONLY = ['score', 'discipline', 'tiebreak_winner'];
 // Step 1 (400): request shape only.
 function validateEventBody(body) {
   if (!isObject(body)) throw validation(['body']);
+  // match_start / match_end carry an empty payload; a missing one is treated as {}.
+  if ((body.type === 'match_start' || body.type === 'match_end') && (body.payload === undefined || body.payload === null)) body.payload = {};
   const f = [];
   if (!isId(body.event_id)) f.push('event_id');
   if (!isId(body.match_id)) f.push('match_id');
