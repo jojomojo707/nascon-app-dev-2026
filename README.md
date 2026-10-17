@@ -56,6 +56,8 @@ curl -X POST localhost:8080/api/v1/demo/seed -H "Authorization: Bearer $TOKEN"
 
 Source in `mobile/`; the release APK is `mobile/release/app-release.apk` (Android 10+). Set the server address on the login or settings screen: `http://10.0.2.2:8080` on the emulator, or `http://<laptop LAN IP>:8080` on a phone (use the team hotspot; campus Wi-Fi isolates devices).
 
+For a USB-connected phone, run `adb reverse tcp:8080 tcp:8080` and set the app server to `http://localhost:8080`. Repeat the reverse command after reconnecting USB. Build, install and offline smoke-test steps are in [`mobile/README.md`](mobile/README.md).
+
 ## Docs
 
 - Spec: [`Docs/spec/`](Docs/spec/index.md) (start at `index.md`)

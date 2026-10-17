@@ -1,6 +1,6 @@
 # Progress (backend + overall)
 
-Mobile progress is in `mobile/PROGRESS.md`. The app is built on a separate worktree branch by a parallel agent and merged into `main` at checkpoints (14:00 and 14:45 PKT).
+Mobile progress is in `mobile/PROGRESS.md`. The mobile source is merged into `main`; the release build uses the existing mobile worktree and its cached Android dependencies.
 Plan: `/home/asad/.claude/plans/implement-the-full-nascon-woolly-sunbeam.md`.
 
 ## Done (all pushed to `main`)
@@ -15,16 +15,23 @@ Plan: `/home/asad/.claude/plans/implement-the-full-nascon-woolly-sunbeam.md`.
 9. RBAC matrix + 7 probes, HS256 JWT verification, `/api/v1` rate limit, 413.
 10. `POST /audit/v1/offline-sync`: one shared service, also used by `/api/v1/offline-sync`.
 11. `/api/v1/*` wrappers for the app, plus `POST /api/v1/demo/seed`.
-- Unit tests: 66 passing (`./run_tests.sh`). E2E: 5 passing (`scripts/e2e.sh`).
+- Unit tests: 67 passing (`./run_tests.sh`). E2E: 5 passing (`scripts/e2e.sh`).
 - `COVERAGE.json` comes from `node scripts/coverage-areas.mjs --write`; Node 20 and Node 24 give identical figures.
 - Docs: README, TRACEABILITY, ADR (8), `.env.example`.
 
 ## In progress
-- Mobile app (parallel agent) → merge its branch + APK at checkpoints.
+- Release APK build, device smoke test and final submission.
 
 ## To do
 - 14:45 hard checkpoint: clean compose up, tests, merge mobile + APK, update docs, push. Final push before 15:05:00.
 - Realtime WebSocket `/api/v1/ws?token=<jwt>` is live (protocol in mobile/architecture/07; `src/lib/realtime.js`).
+
+## Release verification (2026-10-17)
+- 14:05–14:06 PKT: clean `docker compose down -v` followed by `DAY1_SALT=test docker compose up -d --build`; `/health` returned 200. All 5 live-stack checks passed, then demo content was seeded again.
+- Backend: all 67 unit tests pass; measured per-area coverage matches `COVERAGE.json` unchanged.
+- Mobile: TypeScript check and all 15 Jest tests pass. Production Android JavaScript/Hermes export succeeds.
+- All five demo accounts log in and load their tenant lists. Fixtures (6), standings, live match, pinned product, club profile and squads respond successfully; authenticated WebSocket connects.
+- The connected Samsung A52s is authorized for ADB with `tcp:8080` reversed to the laptop. Install/device checks await the APK.
 
 ## Decisions (minor, logged)
 - MinIO is behind profile `objectstore`, because Docker Hub denies `minio/minio` pulls. Receipts live in Postgres. (User-approved.)

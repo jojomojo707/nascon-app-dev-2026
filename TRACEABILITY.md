@@ -1,7 +1,7 @@
 # Traceability
 
 Maps every requirement ID to its source files and automated tests. Requirement text: [`Docs/spec/02-functional-and-nonfunctional-requirements.md`](Docs/spec/02-functional-and-nonfunctional-requirements.md).
-Unit tests run with `./run_tests.sh`; live-stack checks run with `scripts/e2e.sh` (needs `docker compose up`). Mobile rows are filled from `mobile/PROGRESS.md` once the app branch is merged.
+Unit tests run with `./run_tests.sh`; live-stack checks run with `scripts/e2e.sh` (needs `docker compose up`). Mobile tests run with `cd mobile && npm test -- --runInBand`; typecheck with `npm run typecheck`.
 
 | ID | Requirement | Source files | Automated tests |
 | --- | --- | --- | --- |
@@ -14,6 +14,6 @@ Unit tests run with `./run_tests.sh`; live-stack checks run with `scripts/e2e.sh
 | FR-2.3 | Integrated club merchandise store | `backend/src/domain/store/pricing.js`, `gateway.js` (mock authorize/capture/void/refund), `receipt.js` (PDF), `store/service.js`, `lib/queue.js` + `worker.js` (order domain events) | `tests/store.test.js` (PDF text has order id + `PKR 4500.00`), `scripts/e2e.sh` |
 | FR-5.1 | Five-tier role-based access control | `backend/src/domain/rbac/policy.js` (policy-as-code matrix), `rbac/jwt.js`, `rbac/service.js`, `routes/audit/rbac.js` (7 probes), `routes/api/index.js` | `tests/rbac.test.js` (every matrix cell, negative tests per role boundary), `scripts/e2e.sh` |
 | NFR-3 | Concurrency correctness (20 buyers, last unit) | `backend/src/domain/store/service.js` (conditional decrement `stock >= q` in one transaction, release on payment failure), `db/schema.sql` (`CHECK stock >= 0`) | `scripts/e2e.sh` (20 parallel checkouts → 1×201, 19×409, stock 0, reserved 0) |
-| NFR-4 | Offline tolerance (mobile cache, queue, sync) | `backend/src/domain/sync/envelope.js`, `sync/service.js` (shared by `/audit/v1` and `/api/v1` offline-sync); mobile: see `mobile/PROGRESS.md` | `tests/sync.test.js`, `scripts/e2e.sh` |
+| NFR-4 | Offline tolerance (mobile cache, queue, sync) | `backend/src/domain/sync/envelope.js`, `sync/service.js` (shared by `/audit/v1` and `/api/v1` offline-sync); `mobile/src/data/db.ts` (SQLite cache and persistent queue, recovery after force-close), `sync.ts` (single-flight sync and per-action results), `connectivity.ts`; `mobile/src/core/offlineAction.ts`, `mobile/src/app/sync.tsx`, `mobile/src/ui/components.tsx` (connectivity banner) | `tests/sync.test.js`, `scripts/e2e.sh`, `mobile/__tests__/offlineAction.test.ts`, `mobile/__tests__/errors.test.ts`; device desk check in `mobile/README.md` |
 | NFR-5 | Security (OWASP, token storage, rate limit, validation, RBAC) | `backend/src/middleware/rateLimit.js`, `rbac/jwt.js` (alg:none/tamper/expiry → 401), `app.js` (1 MB → 413, malformed JSON → 400), parameterised SQL everywhere, `lib/validate.js` | `tests/rbac.test.js`, `tests/sports.test.js` (SQL-injection id → 400), `tests/store.test.js` (script/quote strings), `scripts/e2e.sh` |
 | NFR-7 | Reproducibility (one-command startup and seed) | `docker-compose.yml`, `backend/Dockerfile`, `backend/src/server.js` (schema + seed at boot), `domain/seed/reset.js`, `routes/health.js` | `scripts/e2e.sh` (reset twice → identical state), clean `docker compose down -v && up -d --build` run at checkpoints |
