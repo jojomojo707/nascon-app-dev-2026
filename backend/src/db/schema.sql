@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS registrations (
   reg_seq BIGSERIAL PRIMARY KEY, player_id TEXT NOT NULL, league_id TEXT NOT NULL, data JSONB NOT NULL);
 CREATE TABLE IF NOT EXISTS audit_entries (
   audit_seq BIGSERIAL PRIMARY KEY, player_id TEXT NOT NULL, entry JSONB NOT NULL, loan_ref TEXT UNIQUE);
-CREATE TABLE IF NOT EXISTS roster_requests (request_id TEXT PRIMARY KEY, body_hash TEXT NOT NULL, response JSONB NOT NULL);
+CREATE TABLE IF NOT EXISTS roster_requests (
+  request_id TEXT PRIMARY KEY, league_id TEXT NOT NULL, body_hash TEXT NOT NULL, response JSONB NOT NULL);
 
 -- Store
 CREATE TABLE IF NOT EXISTS products (

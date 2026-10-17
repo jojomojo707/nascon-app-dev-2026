@@ -6,6 +6,7 @@ const sports = require('../../domain/sports/service');
 const { generateFixtures } = require('../../domain/fixtures');
 const scoring = require('../../domain/scoring/service');
 const { getStandings } = require('../../domain/standings/service');
+const roster = require('../../domain/roster/service');
 
 const router = express.Router();
 
@@ -36,6 +37,19 @@ router.get('/score/:match_id', async (req, res) => {
 
 router.get('/standings/:league_id', async (req, res) => {
   res.status(200).json(await getStandings(req.params.league_id));
+});
+
+router.post('/roster/setup', async (req, res) => {
+  res.status(201).json(await roster.setupRoster(req.body));
+});
+
+router.post('/roster/transfer', async (req, res) => {
+  const r = await roster.transfer(req.body);
+  res.status(r.status).json(r.body);
+});
+
+router.get('/roster/history/:player_id', async (req, res) => {
+  res.status(200).json(await roster.history(req.params.player_id, req.query.as_of));
 });
 
 module.exports = router;
