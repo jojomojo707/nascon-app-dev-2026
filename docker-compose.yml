@@ -1,0 +1,80 @@
+# Infrastructure for the NaSCon '26 Part I backend.
+# Start with:  DAY1_SALT=<salt> docker compose up -d --build
+#
+# Live services below are the approved open-source infrastructure (spec: Docs/spec/03-infra-and-stack.md).
+# The API and worker services are commented out because the backend code does not exist yet.
+# When it does, uncomment them and point `build:` at the backend folder.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nascon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nascon}
+      POSTGRES_DB: ${POSTGRES_DB:-nascon}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nascon}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  cache:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  queue:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-nascon}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-nascon}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  storage:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nascon}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nascon-secret}
+    volumes:
+      - storage_data:/data
+
+  # --- TODO: enable once the backend exists -------------------------------
+  # api:
+  #   build: ./backend
+  #   ports:
+  #     - "8080:8080"            # grader calls http://localhost:8080
+  #   environment:
+  #     DAY1_SALT: ${DAY1_SALT}  # required by the spec, forwarded from the host
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-nascon}:${POSTGRES_PASSWORD:-nascon}@db:5432/${POSTGRES_DB:-nascon}
+  #     REDIS_URL: redis://cache:6379
+  #     QUEUE_URL: amqp://${RABBITMQ_USER:-nascon}:${RABBITMQ_PASSWORD:-nascon}@queue:5672
+  #     MINIO_ENDPOINT: storage:9000
+  #     MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nascon}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nascon-secret}
+  #   depends_on:
+  #     db: { condition: service_healthy }
+  #     cache: { condition: service_healthy }
+  #     queue: { condition: service_healthy }
+  #     storage: { condition: service_started }
+  #
+  # worker:
+  #   build: ./backend
+  #   command: ["<worker start command>"]
+  #   environment:
+  #     DAY1_SALT: ${DAY1_SALT}
+  #   depends_on:
+  #     - api
+
+volumes:
+  db_data:
+  storage_data:
