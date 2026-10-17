@@ -2,12 +2,13 @@
 # Start with:  DAY1_SALT=<salt> docker compose up -d --build
 #
 # Live services below are the approved open-source infrastructure (spec: Docs/spec/03-infra-and-stack.md).
+# Image tags are pinned to the organizers' pre-pulled bundle (Docs/rules-booklet.md §2); keep them exact.
 # The API and worker services are commented out because the backend code does not exist yet.
 # When it does, uncomment them and point `build:` at the backend folder.
 
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-nascon}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nascon}
@@ -21,7 +22,7 @@ services:
       retries: 20
 
   cache:
-    image: redis:7
+    image: redis:7-alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -29,7 +30,7 @@ services:
       retries: 20
 
   queue:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.13-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-nascon}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-nascon}
@@ -40,7 +41,7 @@ services:
       retries: 20
 
   storage:
-    image: minio/minio
+    image: minio/minio:RELEASE.2024-09-22T00-33-43Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nascon}
@@ -50,7 +51,7 @@ services:
 
   # --- TODO: enable once the backend exists -------------------------------
   # api:
-  #   build: ./backend
+  #   build: ./backend            # backend Dockerfile: FROM node:20-alpine (pre-pulled runtime image)
   #   ports:
   #     - "8080:8080"            # grader calls http://localhost:8080
   #   environment:
