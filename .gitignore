@@ -32,6 +32,7 @@ mobile/**/.dart_tool/
 mobile/**/.flutter-plugins*
 mobile/**/local.properties
 mobile/**/*.iml
+mobile/android/
 !mobile/release/
 !mobile/release/app-release.apk
 
