@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { formatMoney, humanize, isoNowUtc, isValidDate } from "../src/core/format";
 import { eventButtonLabel, scoreHeadline } from "../src/core/scoreView";
 import { normaliseServerUrl } from "../src/core/url";

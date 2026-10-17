@@ -33,9 +33,9 @@ export default function Settings() {
 
   const seed = async () => {
     setBusy(true);
-    const res = await apiPost(routes.demoSeed);
+    const res = await apiPost<{ status?: string }>(routes.demoSeed);
     setBusy(false);
-    if (res.ok) toast("Demo content created.", "success");
+    if (res.ok) toast(res.data?.status === "already_seeded" ? "Demo content already exists." : "Demo content created.", "success");
     else toast(messageForError(res.error), "error");
   };
 

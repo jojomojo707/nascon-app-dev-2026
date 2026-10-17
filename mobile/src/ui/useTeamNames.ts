@@ -10,6 +10,8 @@ export function useTeamNames(leagueId: string | undefined, matchId: string) {
   return useMemo(() => {
     void dataVersion;
     const names: Record<string, string> = {};
+    const fromScore = cacheGet<{ team_names?: Record<string, string> }>(keys.score(matchId))?.data?.team_names;
+    if (fromScore) Object.assign(names, fromScore);
     if (leagueId) {
       const st = cacheGet<{ team_names?: Record<string, string> }>(keys.standings(leagueId))?.data?.team_names;
       if (st) Object.assign(names, st);

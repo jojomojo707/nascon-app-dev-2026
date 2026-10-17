@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useTeamNames } from "../../../ui/useTeamNames";
+import { useLiveMatch } from "../../../ui/useLiveMatch";
 import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { repo, keys } from "../../../data/repos";
@@ -31,6 +32,10 @@ export default function MatchDetail() {
     return pendingForTarget(matchId);
   }, [matchId, dataVersion]);
   const canScore = capabilities(session).canScore(leagueId);
+  const live = useLiveMatch(matchId, () => {
+    score.refresh();
+    pinned.refresh();
+  });
 
   return (
     <Screen onRefresh={score.refresh} refreshing={score.isRefreshing}>
@@ -44,7 +49,11 @@ export default function MatchDetail() {
                 <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
                   <StatusChip text={st.text} icon={st.icon} tone={s.status === "in_progress" ? "info" : s.status === "completed" ? "success" : "neutral"} />
                   {netState === "online" ? (
-                    <StatusChip text="Live" icon="access-point" tone="success" />
+                    live === "connected" ? (
+                      <StatusChip text="Live" icon="access-point" tone="success" />
+                    ) : (
+                      <StatusChip text="Reconnecting..." icon="access-point-network-off" tone="warning" />
+                    )
                   ) : (
                     <StatusChip text="Offline · saved score" icon="cloud-off-outline" />
                   )}

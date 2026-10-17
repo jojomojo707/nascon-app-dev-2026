@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { appErrorFromResponse, messageForCode, messageForError, SPEC_ERROR_CODES } from "../src/core/errors";
 
 // Every code in Docs/spec/05-error-codes.md.

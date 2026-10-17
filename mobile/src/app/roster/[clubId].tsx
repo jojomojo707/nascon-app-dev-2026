@@ -43,7 +43,13 @@ export default function RosterManagement() {
                 icon="account-outline"
                 title={p.name}
                 subtitle={[p.position ? humanize(p.position) : null, p.role ? humanize(p.role) : null].filter(Boolean).join(" · ")}
-                right={pendingIds.has(p.player_id) ? <StatusChip text="Pending sync" icon="clock-outline" tone="warning" /> : undefined}
+                right={
+                  pendingIds.has(p.player_id) ? (
+                    <StatusChip text="Pending sync" icon="clock-outline" tone="warning" />
+                  ) : p.on_loan ? (
+                    <StatusChip text="On loan" icon="account-arrow-right-outline" tone="info" />
+                  ) : undefined
+                }
                 onPress={() => setPlayer(p)}
               />
             ))}

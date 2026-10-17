@@ -34,11 +34,14 @@ export default function Fixtures() {
             <View style={{ gap: 8 }}>
               {data.map((f) => {
                 const st = statusLabel(f.status);
+                const hs = typeof f.home === "string" ? null : f.home.score;
+                const as = typeof f.away === "string" ? null : f.away.score;
+                const showScore = f.status !== "upcoming" && f.status !== "scheduled" && hs != null && as != null;
                 return (
                   <ListRow
                     key={f.match_id}
                     title={`${teamName(f.home)} vs ${teamName(f.away)}`}
-                    subtitle={`${formatTime(f.scheduled_at)}${f.venue ? " · " + f.venue : ""}`}
+                    subtitle={`${showScore ? `Score ${hs} – ${as} · ` : ""}${formatTime(f.scheduled_at)}${f.venue ? " · " + f.venue : ""}`}
                     right={<StatusChip text={st.text} icon={st.icon} tone={toneForStatus(f.status)} />}
                     onPress={() => router.push({ pathname: "/match/[matchId]", params: { matchId: f.match_id, leagueId: league.league_id } })}
                     accessibilityLabel={`${teamName(f.home)} versus ${teamName(f.away)}, ${st.text}. Open match.`}

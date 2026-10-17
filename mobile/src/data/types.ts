@@ -3,7 +3,7 @@
 
 export type League = { league_id: string; name?: string | null; sport_id?: string | null; tenant_id?: string | null; season?: string | null };
 
-export type TeamRef = { team_id: string; name?: string | null };
+export type TeamRef = { team_id: string; name?: string | null; score?: number | null };
 
 export type Fixture = {
   match_id: string;
@@ -78,6 +78,7 @@ export type Score = {
   away: ScoreSide;
   version: number;
   events: MatchEvent[];
+  team_names?: Record<string, string>;
 };
 
 export type PinnedProduct = { product_id: string; name: string; image_url?: string | null; price_minor?: number };
@@ -91,6 +92,8 @@ export type RosterPlayer = {
   role?: string | null;
   squad_id?: string | null;
   league_id?: string | null;
+  on_loan?: boolean | null;
+  parent_squad_id?: string | null;
 };
 
 export type Club = {

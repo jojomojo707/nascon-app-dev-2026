@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { buildRosterAction, buildScoreAction, buildSyncEnvelope, describeResult } from "../src/core/offlineAction";
 import { messageForCode } from "../src/core/errors";
 
