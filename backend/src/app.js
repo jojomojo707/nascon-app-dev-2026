@@ -7,6 +7,9 @@ function createApp() {
   app.disable('x-powered-by');
   app.set('trust proxy', false);
 
+  // RBAC probes authorize before anything else, including body parsing (spec 15).
+  app.use('/audit/v1/rbac', require('./routes/audit/rbac'));
+
   // Parse every body as JSON regardless of Content-Type; bodies over 1 MB -> 413 (spec 04).
   app.use(express.json({ limit: '1mb', type: () => true, strict: true }));
 

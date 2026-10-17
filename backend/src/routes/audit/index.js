@@ -8,6 +8,7 @@ const scoring = require('../../domain/scoring/service');
 const { getStandings } = require('../../domain/standings/service');
 const roster = require('../../domain/roster/service');
 const store = require('../../domain/store/service');
+const rbac = require('../../domain/rbac/service');
 
 const router = express.Router();
 
@@ -61,5 +62,10 @@ router.post('/checkout', async (req, res) => {
 router.get('/inventory/:variant_id', async (req, res) => {
   res.status(200).json(await store.inventory(req.params.variant_id));
 });
+
+router.post('/rbac-matrix', async (req, res) => {
+  res.status(200).json(await rbac.rbacMatrix());
+});
+
 
 module.exports = router;
