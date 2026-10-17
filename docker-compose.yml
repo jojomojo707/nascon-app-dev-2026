@@ -1,12 +1,41 @@
-# Infrastructure for the NaSCon '26 Part I backend.
+# NaSCon '26 Part I backend stack.
 # Start with:  DAY1_SALT=<salt> docker compose up -d --build
 #
-# Live services below are the approved open-source infrastructure (spec: Docs/spec/03-infra-and-stack.md).
 # Image tags are pinned to the organizers' pre-pulled bundle (Docs/rules-booklet.md §2); keep them exact.
-# The API and worker services are commented out because the backend code does not exist yet.
-# When it does, uncomment them and point `build:` at the backend folder.
+# The API publishes host port 8080. Migrations and the baseline seed run automatically at API startup.
 
 services:
+  api:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      DAY1_SALT: ${DAY1_SALT}
+      JWT_SECRET: ${JWT_SECRET:-nascon-local-jwt-secret-change-me}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nascon}:${POSTGRES_PASSWORD:-nascon}@db:5432/${POSTGRES_DB:-nascon}
+      REDIS_URL: redis://cache:6379
+      QUEUE_URL: amqp://${RABBITMQ_USER:-nascon}:${RABBITMQ_PASSWORD:-nascon}@queue:5672
+    depends_on:
+      db: { condition: service_healthy }
+      cache: { condition: service_started }
+      queue: { condition: service_started }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    command: ["node", "src/worker.js"]
+    environment:
+      DAY1_SALT: ${DAY1_SALT}
+      QUEUE_URL: amqp://${RABBITMQ_USER:-nascon}:${RABBITMQ_PASSWORD:-nascon}@queue:5672
+    depends_on:
+      queue: { condition: service_started }
+    restart: unless-stopped
+
   db:
     image: postgres:16-alpine
     environment:
@@ -17,9 +46,9 @@ services:
       - db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nascon}"]
-      interval: 5s
+      interval: 2s
       timeout: 3s
-      retries: 20
+      retries: 30
 
   cache:
     image: redis:7-alpine
@@ -40,41 +69,18 @@ services:
       timeout: 5s
       retries: 20
 
+  # Object store. Opt-in profile: Docker Hub currently refuses pulls of minio/minio (checked 2026-10-17),
+  # and one unpullable image would make the whole `compose up` fail. Receipts are stored in Postgres.
+  # Start it with: docker compose --profile objectstore up -d
   storage:
     image: minio/minio:RELEASE.2024-09-22T00-33-43Z
+    profiles: ["objectstore"]
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nascon}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nascon-secret}
     volumes:
       - storage_data:/data
-
-  # --- TODO: enable once the backend exists -------------------------------
-  # api:
-  #   build: ./backend            # backend Dockerfile: FROM node:20-alpine (pre-pulled runtime image)
-  #   ports:
-  #     - "8080:8080"            # grader calls http://localhost:8080
-  #   environment:
-  #     DAY1_SALT: ${DAY1_SALT}  # required by the spec, forwarded from the host
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-nascon}:${POSTGRES_PASSWORD:-nascon}@db:5432/${POSTGRES_DB:-nascon}
-  #     REDIS_URL: redis://cache:6379
-  #     QUEUE_URL: amqp://${RABBITMQ_USER:-nascon}:${RABBITMQ_PASSWORD:-nascon}@queue:5672
-  #     MINIO_ENDPOINT: storage:9000
-  #     MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nascon}
-  #     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nascon-secret}
-  #   depends_on:
-  #     db: { condition: service_healthy }
-  #     cache: { condition: service_healthy }
-  #     queue: { condition: service_healthy }
-  #     storage: { condition: service_started }
-  #
-  # worker:
-  #   build: ./backend
-  #   command: ["<worker start command>"]
-  #   environment:
-  #     DAY1_SALT: ${DAY1_SALT}
-  #   depends_on:
-  #     - api
 
 volumes:
   db_data:
