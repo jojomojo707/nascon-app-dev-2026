@@ -1,0 +1,39 @@
+# Secrets — the real DAY1_SALT must never be committed
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+
+# Docker local overrides
+docker-compose.override.yml
+
+# Mobile build output (the release APK is the one exception, required by the spec)
+mobile/**/build/
+mobile/**/.gradle/
+mobile/**/.dart_tool/
+mobile/**/.flutter-plugins*
+mobile/**/local.properties
+mobile/**/*.iml
+!mobile/release/
+!mobile/release/app-release.apk
+
+# Claude Code local state
+.claude/
