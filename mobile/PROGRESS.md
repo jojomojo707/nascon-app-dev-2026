@@ -9,7 +9,8 @@ Expo SDK 58 / React Native 0.88 app in `mobile/`. Routes live in `mobile/src/app
 - P3: Store (catalogue, variant picker with stock hints, cart in SQLite, checkout with test-card picker + WELCOME10 preview + confirm dialog + idempotent `order_id` reused on retry, receipt PDF saved to app storage, opened in the system PDF viewer, Share/Save via share sheet, local orders list).
 - P4: Scoring entry (buttons generated from `scoring_events`, start/end with confirm, tie-break winner, correction with reason → `compensation`), Roster management (transfer / loan / release bottom sheet, destination squad picker, date validation, confirm dialog, deferred_until_match_end message), Player history.
 - P5: Persistent offline queue (`pending_actions` table) in EXACT Docs/spec/16 format, single-flight sync to `POST /api/v1/offline-sync` (on enqueue, offline→online, app start, Sync now), per-action results (Synced / Already synced / Not applied + plain-language reason), queue cleared, SENDING rows reset on restart.
-- P6 (reduced): realtime via 10 s polling of `/score` on Match detail (cut order allows this); WebSocket not built.
+- P6: realtime WebSocket (`/api/v1/ws?token=`, subscribe per match, refetch `/score` on `match.score_updated` / `match.status_changed`, backoff reconnect, "Live" / "Reconnecting..." chip) with 10 s polling kept as the fallback.
+- Verified against the live backend on main (curl): login, leagues, fixtures (with scores), clubs/{id} (roster with squad_id, league_id, on_loan), products, squads, sports, demo/seed all match the shapes the app parses.
 - Tests: `npx jest` → 3 suites, 15 tests (queue format, error-code coverage, formatMoney, labels, URL).
 
 ## In progress
@@ -22,7 +23,9 @@ Expo SDK 58 / React Native 0.88 app in `mobile/`. Routes live in `mobile/src/app
 - Styling: React Native `StyleSheet` + one tokens file (`src/ui/theme.ts`) instead of NativeWind (avoids Babel/Tailwind setup risk). Tenant colours are applied from the login response; contrast-safe on-colour is computed.
 - Local DB: expo-sqlite used directly (no Drizzle). Cached server responses live in a generic `cache(key, json, fetched_at)` table; queue in `pending_actions`, results in `sync_results`, cart in `cart_lines`, orders in `orders_local`. Screens re-read SQLite when a Zustand `dataVersion` counter is bumped after each write.
 - No react-native-pdf / datetimepicker: receipt opens in the phone's PDF viewer (expo-intent-launcher), dates are typed as YYYY-MM-DD with validation.
-- Realtime: polling every 10 s on Match detail instead of WebSocket.
+- Realtime: WebSocket triggers + 10 s polling fallback on Match detail only.
+- APK build on campus Wi-Fi: Gradle's Kotlin daemon hung over RMI → `-Pkotlin.compiler.execution.strategy=in-process`; Expo's Gradle plugin wanted the uncached Kotlin 2.2.21 compiler (~60 MB at ~10 KB/s) → `build-apk.sh` pins it to the cached 2.2.0 (same as React Native's plugin). Both are in `scripts/build-apk.sh`.
+- Testing on the team's phone (Samsung A52s, Android 14) over USB: `adb reverse tcp:8080 tcp:8080`, then server `localhost:8080` in the app.
 - Login request lowercases the email.
 - `customer_id` for checkout = session `user.user_id`.
 
